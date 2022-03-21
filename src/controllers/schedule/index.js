@@ -4,10 +4,10 @@ export async function getScheduleController(req, res) {
   try {
     Timeslot.find((err, data) => {
       if (!err) {
-        return res.json({ schedule: data });
+        return res.send({ schedule: data });
       }
 
-      return res.status(500).json({
+      return res.status(500).send({
         error: err,
       });
     });
@@ -21,7 +21,36 @@ export async function getScheduleController(req, res) {
 
 export async function addTimeslotController(req, res) {
   try {
-    console.log(req.body);
+    const { firstName, lastName, dateTime, service, description } = req.body;
+
+    Timeslot.create(
+      {
+        firstName,
+        lastName,
+        dateTime,
+        service,
+        description,
+        createdAt: new Date(dateTime),
+      },
+      (err, timeslot) => {
+        if (!err) {
+          return res.send(timeslot);
+        }
+
+        if (err.code === 11000) {
+          return res.send({
+            error: {
+              field: Object.keys(err.keyValue)[0],
+              message: 'Timeslot already reserved.',
+            },
+          });
+        }
+
+        return res.status(500).send({
+          error: err,
+        });
+      },
+    );
   } catch (err) {
     console.log(err);
     res.status(400).send({

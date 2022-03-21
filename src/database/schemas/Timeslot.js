@@ -22,6 +22,10 @@ const Timeslot = new mongoose.Schema({
     type: mongoose.SchemaTypes.String,
     required: false,
   },
+  // createdAt: {
+  //   type: mongoose.SchemaTypes.Date,
+  //   expires: '30m',
+  // },
 });
 
 export default mongoose.model('timeslots', Timeslot);
