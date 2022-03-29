@@ -147,7 +147,7 @@
                     <option value="" disabled selected>Choose...</option>
                     <option value="haircut">Haircut</option>
                     <option value="shaving">Shaving</option>
-                    <option value="both">Haircut + Shaving</option>
+                    <option value="both">Haircut & Shaving</option>
                   </select>
                   <div class="invalid-feedback">Please choose a service.</div>
                 </div>
@@ -193,21 +193,44 @@
             </button>
           </div>
           <div class="modal-body">
-            
+            <div class="row">
+              <div id="eventFirstName" class="col-md-6">
+                <h5>First name</h5>
+                <p></p>
+              </div>
+              <div id="eventLastName" class="col-md-6">
+                <h5>Last Name</h5>
+                <p></p>
+              </div>
+            </div>
+            <div class="row">
+              <div id="eventTime" class="col-md-6">
+                <h5>Time</h5>
+                <p></p>
+              </div>
+              <div id="eventService" class="col-md-6">
+                <h5>Service</h5>
+                <p></p>
+              </div>
+            </div>
+            <div id="eventDescription">
+              <h5>Description</h5>
+              <p></p>
+            </div>
           </div>
         </div>
       </div>
     </div>
     <script>
       window.addEventListener(
-        "load",
+        'load',
         () => {
-          const validationGroups = $(".validate");
+          const validationGroups = $('.validate');
 
-          $("#scheduleForm").on("submit", function (e) {
+          $('#scheduleForm').on('submit', function (e) {
             e.preventDefault();
 
-            $("#scheduleForm #timeFeedback").html("Please choose a time.");
+            $('#timeFeedback').html('Please choose a time.');
 
             if ($(this)[0].checkValidity()) {
               const values = $(this).serializeObject();
@@ -218,60 +241,65 @@
                 service,
                 description,
               } = values;
-              const date = $("#scheduleModal .modal-title").val();
+              const date = $('#scheduleModal .modal-title').val();
 
-              const [time, modifier] = timeStr.split(" ");
-              let [hours, minutes] = time.split(":");
+              const [time, modifier] = timeStr.split(' ');
+              let [hours, minutes] = time.split(':');
 
-              if (hours === "12") {
-                hours = "00";
+              if (hours === '12') {
+                hours = '00';
               }
 
-              if (modifier === "PM") {
+              if (modifier === 'PM') {
                 hours = parseInt(hours, 10) + 12;
               }
 
               const convertedTime = `${hours}:${minutes}`;
-              const dateTime = moment
-                .utc(`${date} ${convertedTime}`, "YYYY-MM-DD HH:mm:ss")
-                .format();
+              const dateTime = moment(
+                `${date} ${convertedTime}`,
+                'YYYY-MM-DD HH:mm:ss',
+              ).format();
 
               axios
-                .post("/schedule/new", {
+                .post('/schedule/new', {
                   firstName,
                   lastName,
                   dateTime,
                   service,
                   description,
-                  createdAt: dateTime
+                  createdAt: dateTime,
                 })
                 .then((res) => {
                   const response = res.data;
                   const error = response.error;
 
-                  if (error?.field === "dateTime") {
-                    $("#scheduleForm #time").addClass("is-invalid");
-                    $("#scheduleForm #timeFeedback").html(error.message);
+                  if (error?.field === 'dateTime') {
+                    $('#time').addClass('is-invalid');
+                    $('#timeFeedback').html(error.message);
 
                     return;
                   }
 
-                  const toastTitle = $("#toastTitle");
-                  const toastBody = $("#toastBody");
-                  const toast = $(".toast");
+                  const toastTitle = $('#toastTitle');
+                  const toastBody = $('#toastBody');
+                  const toast = $('.toast');
 
                   if (error) {
-                    toastTitle.html("Unexpected Error!");
+                    toastTitle.html('Unexpected Error!');
                     toastBody.html(
-                      "An unexpected error occurred. Please try again."
+                      'An unexpected error occurred. Please try again.',
                     );
-                    toast.toast("show");
+                    toast.toast('show');
+
+                    return;
                   }
 
-                  $("#scheduleModal").modal("hide");
-                  toastTitle.html("Scheduled!");
-                  toastBody.html("Scheduled successfully! See you soon!");
-                  toast.toast("show");
+                  document.dispatchEvent(new Event('schedule'));
+
+                  $('#scheduleModal').modal('hide');
+                  toastTitle.html('Scheduled!');
+                  toastBody.html('Scheduled successfully! See you soon!');
+                  toast.toast('show');
                 })
                 .catch((err) => {
                   console.log(err);
@@ -280,123 +308,168 @@
 
             for (let i = 0; i < validationGroups.length; i++) {
               const invalidGroups =
-                validationGroups[i].querySelectorAll(":invalid");
+                validationGroups[i].querySelectorAll(':invalid');
 
               for (let j = 0; j < invalidGroups.length; j++) {
                 const invalidGroup = invalidGroups[j];
 
-                invalidGroup.classList.add("is-invalid");
+                invalidGroup.classList.add('is-invalid');
                 invalidGroup.addEventListener(
-                  "input",
-                  (e) => e.target.classList.remove("is-invalid"),
-                  { once: true }
+                  'input',
+                  (e) => e.target.classList.remove('is-invalid'),
+                  { once: true },
                 );
 
-                if (invalidGroup.classList.contains("datetimepicker-input")) {
-                  $(`#scheduleForm #${invalidGroup.getAttribute("id")}`).on(
-                    "change.datetimepicker",
+                if (invalidGroup.classList.contains('datetimepicker-input')) {
+                  $(`#${invalidGroup.getAttribute('id')}`).on(
+                    'change.datetimepicker',
                     () => {
-                      invalidGroup.classList.remove("is-invalid");
-                    }
+                      invalidGroup.classList.remove('is-invalid');
+                    },
                   );
                 }
               }
             }
           });
         },
-        false
+        false,
       );
     </script>
     <script>
-      document.addEventListener("DOMContentLoaded", async () => {
-        const calendarEl = document.getElementById("calendar");
-        const {
-          data: { schedule },
-        } = await axios.get("/schedule");
-        const events = [
-          ...schedule.map((event) => ({
-            title: `${event.firstName} ${event.lastName}`,
-            start: event.dateTime,
-            end: new Date(
-              new Date(event.dateTime).getTime() + 30 * 60000
-            ).toISOString(),
-            firstName: event.firstName,
-            lastName: event.lastName,
-            dateTime: event.dateTime,
-            service: event.service,
-            description: event.description,
-          })),
-        ];
+      document.addEventListener('DOMContentLoaded', async () => {
+        const calendarEl = document.getElementById('calendar');
 
         const calendar = new FullCalendar.Calendar(calendarEl, {
-          themeSystem: "bootstrap",
-          initialView: "dayGridMonth",
+          themeSystem: 'bootstrap',
+          initialView: 'dayGridMonth',
           viewDisplay: function (view) {
             const now = new Date();
             const end = new Date();
             end.setMonth(now.getMonth() + 11);
 
             const cal_date_string =
-              view.start.getMonth() + "/" + view.start.getFullYear();
-            const cur_date_string = now.getMonth() + "/" + now.getFullYear();
-            const end_date_string = end.getMonth() + "/" + end.getFullYear();
+              view.start.getMonth() + '/' + view.start.getFullYear();
+            const cur_date_string = now.getMonth() + '/' + now.getFullYear();
+            const end_date_string = end.getMonth() + '/' + end.getFullYear();
 
             if (cal_date_string === cur_date_string) {
-              jQuery(".fc-button-prev").addClass("fc-state-disabled");
+              jQuery('.fc-button-prev').addClass('fc-state-disabled');
             } else {
-              jQuery(".fc-button-prev").removeClass("fc-state-disabled");
+              jQuery('.fc-button-prev').removeClass('fc-state-disabled');
             }
 
             if (end_date_string === cal_date_string) {
-              jQuery(".fc-button-next").addClass("fc-state-disabled");
+              jQuery('.fc-button-next').addClass('fc-state-disabled');
             } else {
-              jQuery(".fc-button-next").removeClass("fc-state-disabled");
+              jQuery('.fc-button-next').removeClass('fc-state-disabled');
             }
           },
           dateClick: function (info) {
-            const validationGroups = $("#scheduleForm .validate .is-invalid");
-            const formControls = $("#scheduleForm .form-control");
-            const date = moment(info.dateStr).format("MMMM D, YYYY");
-            const today = moment().format("MMMM D, YYYY");
+            const validationGroups = $('#scheduleForm .validate .is-invalid');
+            const formControls = $('#scheduleForm .form-control');
+            const date = moment(info.dateStr).format('MMMM D, YYYY');
+            const today = moment().format('MMMM D, YYYY');
 
             if (date >= today) {
-              $("#scheduleModal .modal-title")
+              $('#scheduleModal .modal-title')
                 .html(`Schedule for ${date}`)
                 .val(info.dateStr);
-              $("#scheduleForm #time").datetimepicker({
-                format: "LT",
+              $('#time').datetimepicker({
+                format: 'LT',
                 stepping: 30,
               });
 
               for (let i = 0; i < validationGroups.length; i++) {
-                validationGroups[i].classList.remove("is-invalid");
+                validationGroups[i].classList.remove('is-invalid');
               }
 
               for (let i = 0; i < formControls.length; i++) {
-                formControls[i].value = "";
+                formControls[i].value = '';
               }
 
-              $("#scheduleModal").modal("show");
+              $('#scheduleModal').modal('show');
             }
           },
-          events,
+          events: function (info, successCallback, failureCallback) {
+            axios
+              .get('/schedule')
+              .then((res) => {
+                const { schedule } = res?.data;
+                successCallback([
+                  ...schedule.map((event) => ({
+                    title: `${event.firstName} ${event.lastName}`,
+                    start: event.dateTime,
+                    end: new Date(
+                      new Date(event.dateTime).getTime() + 30 * 60000,
+                    ).toISOString(),
+                    firstName: event.firstName,
+                    lastName: event.lastName,
+                    dateTime: event.dateTime,
+                    service: event.service,
+                    description: event.description,
+                  })),
+                ]);
+              })
+              .catch((err) => {
+                failureCallback(err);
+              });
+          },
           eventTimeFormat: {
-            hour: "numeric",
-            minute: "2-digit",
-            meridiem: "long",
+            hour: 'numeric',
+            minute: '2-digit',
+            meridiem: 'long',
           },
           eventClick: function (info) {
-            const { firstName, lastName, dateTime, service, description } = info.event.extendedProps;
-            const date = moment.utc(dateTime).format("MMMM D, YYYY");
-            const time = moment.utc(dateTime).format("h:mm A");
-          
-            $('#eventModal .modal-title').html(`Appointment for ${date} at ${time}`);
+            const { firstName, lastName, dateTime, service, description } =
+              info.event.extendedProps;
+            const date = moment(dateTime).format('MMMM D, YYYY');
+            const time = moment(dateTime).format('h:mm A');
 
-            $("#eventModal").modal("show");
+            $('#eventModal .modal-title').html(
+              `Appointment for ${date} at ${time}`,
+            );
+
+            $('#eventFirstName p').html(firstName);
+            $('#eventLastName p').html(lastName);
+            $('#eventTime p').html(`${date} at ${time}`);
+            $('#eventService p').html(
+              service === 'both'
+                ? 'Haircut & Shaving'
+                : service.charAt(0).toUpperCase() + service.slice(1),
+            );
+
+            if (description) {
+              $('#eventDescription').removeClass('d-none');
+              $('#eventDescription p').html(description);
+            } else {
+              $('#eventDescription').addClass('d-none');
+            }
+
+            $('#eventModal').modal('show');
           },
-          timeZone: "utc",
         });
         calendar.render();
+
+        document.addEventListener('schedule', async () => {
+          schedule = await axios.get('/schedule');
+          events = [
+            ...schedule?.data.schedule.map((event) => ({
+              title: `${event.firstName} ${event.lastName}`,
+              start: event.dateTime,
+              end: new Date(
+                new Date(event.dateTime).getTime() + 30 * 60000,
+              ).toISOString(),
+              firstName: event.firstName,
+              lastName: event.lastName,
+              dateTime: event.dateTime,
+              service: event.service,
+              description: event.description,
+            })),
+          ];
+
+          calendar.add;
+          calendar.refetchEvents();
+        });
       });
     </script>
     <script

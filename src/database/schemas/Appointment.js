@@ -12,7 +12,10 @@ const Appointment = new mongoose.Schema({
   dateTime: {
     type: Date,
     required: true,
-    unique: true,
+    index: {
+      unique: true,
+      expires: '30m',
+    },
   },
   service: {
     type: String,
@@ -21,11 +24,6 @@ const Appointment = new mongoose.Schema({
   description: {
     type: String,
     required: false,
-  },
-  createdAt: {
-    type: Date,
-    expires: '30m',
-    default: Date.now
   },
 });
 
