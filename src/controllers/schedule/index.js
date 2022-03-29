@@ -1,8 +1,8 @@
-import { Timeslot } from '../../database/schemas/index.js';
+import { Appointment } from '../../database/schemas/index.js';
 
 export async function getScheduleController(req, res) {
   try {
-    Timeslot.find((err, data) => {
+    Appointment.find((err, data) => {
       if (!err) {
         return res.send({ schedule: data });
       }
@@ -23,7 +23,7 @@ export async function addTimeslotController(req, res) {
   try {
     const { firstName, lastName, dateTime, service, description } = req.body;
 
-    Timeslot.create(
+    Appointment.create(
       {
         firstName,
         lastName,
@@ -41,7 +41,7 @@ export async function addTimeslotController(req, res) {
           return res.send({
             error: {
               field: Object.keys(err.keyValue)[0],
-              message: 'Timeslot already reserved.',
+              message: 'Appointment already reserved.',
             },
           });
         }

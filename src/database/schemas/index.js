@@ -1,3 +1,3 @@
-import Timeslot from './Timeslot.js';
+import Appointment from './Appointment.js';
 
-export { Timeslot };
+export { Appointment };
